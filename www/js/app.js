@@ -138,42 +138,65 @@ todoApp.controller("ListsController", function ($scope, $ionicPlatform, $cordova
         } else {
           console.log("Action not completed")
         }
-      })
+      });
+  };
+
+  $scope.delete = function(item) {
+    var outerquery = "DELETE FROM tblTodoListItems where todo_list_id = ?";
+    var innerquery = "DELETE FROM tblTodoLists where id = ?";
+    $cordovaSQLite.execute(db, outerquery, [item.id]).then(function(res) {
+      $cordovaSQLite.execute(db, innerquery, [item.id]).then(function(res) {
+        $scope.lists.splice($scope.lists.indexOf(item), 1);
+      });
+    }, function (err) {
+      console.error(err);
+    });
   }
 });
 
-todoApp.controller("ItemsController", function ($scope, $ionicPlatform, $cordovaSQLite, $stateParams, $ionicPopup) {
-  $scope.items=[];
+todoApp.controller("ItemsController", function($scope, $ionicPlatform, $ionicPopup, $cordovaSQLite, $stateParams) {
+
+  $scope.items = [];
+
   $ionicPlatform.ready(function() {
-    var query = "SELECT id, todo_list_id, todo_list_item_name FROM tblTodoListItems WHERE todo_list_id = ?";
-    $cordovaSQLite.execute(db, query, [$stateParams.categoryId]).then(function(res){
+    var query = "SELECT id, todo_list_id, todo_list_item_name FROM tblTodoListItems where todo_list_id = ?";
+    $cordovaSQLite.execute(db, query, [$stateParams.listId]).then(function(res) {
       if(res.rows.length > 0) {
         for(var i = 0; i < res.rows.length; i++) {
-          $scope.lists.push({id: res.rows.items(i).id, todo_list_id: res.rows.items(i).todo_list_id, todo_list_item_name: res.rows.items(i).todo_list_item_name});
+          $scope.items.push({id: res.rows.item(i).id, todo_list_id: res.rows.item(i).todo_list_id, todo_list_item_name: res.rows.item(i).todo_list_item_name});
         }
       }
-
-    }, function(error) {
-      console.error(error);
+    }, function (err) {
+      console.error(err);
     });
   });
+
   $scope.insert = function() {
     $ionicPopup.prompt({
-      title: "Enter a new TODO list item",
-      inputType: "text"
+      title: 'Enter a new TODO list',
+      inputType: 'text'
     })
       .then(function(result) {
-        if(result !==undefined) {
-          var query = "INSERT INTO tblTodoListItems (todo_list_id, todo_list_item_name) VALUES (?, ?)";
+        if(result !== undefined) {
+          var query = "INSERT INTO tblTodoListItems (todo_list_id, todo_list_item_name) VALUES (?,?)";
           $cordovaSQLite.execute(db, query, [$stateParams.listId, result]).then(function(res) {
-            $scope.lists.push({id: res.insertId, todo_list_id: $stateParams.listId, todo_list_item_name: result});
-          }, function (error) {
-            console.error(error);
+            $scope.items.push({id: res.insertId, todo_list_id: $stateParams.listId, todo_list_item_name: result});
+          }, function (err) {
+            console.error(err);
           });
         } else {
-          console.log("Action not completed")
+          console.log("Action not completed");
         }
-      })
+      });
+  }
+
+  $scope.delete = function(item) {
+    var query = "DELETE FROM tblTodoListItems where id = ?";
+    $cordovaSQLite.execute(db, query, [item.id]).then(function(res) {
+      $scope.items.splice($scope.items.indexOf(item), 1);
+    }, function (err) {
+      console.error(err);
+    });
   }
 });
 
